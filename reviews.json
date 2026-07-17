@@ -1,0 +1,82 @@
+[
+  {
+    "id": 4654807413,
+    "node_id": "PRR_kwDOOETmj88AAAABFXK5dQ",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**Actionable comments posted: 2**\n\n> [!CAUTION]\n> Some comments are outside the diff and can’t be posted inline due to platform limitations.\n> \n> \n> \n> <details>\n> <summary>⚠️ Outside diff range comments (1)</summary><blockquote>\n> \n> <details>\n> <summary>packages/nvidia_nat_core/tests/nat/observability/mixin/test_type_introspection_mixin.py (1)</summary><blockquote>\n> \n> `236-237`: _📐 Maintainability & Code Quality_ | _🟡 Minor_ | _⚡ Quick win_\n> \n> **Stale docstring references removed `lru_cache` mechanism.**\n> \n> The test now exercises the per-instance cache, not `lru_cache`. Update the docstring to avoid confusion.\n> \n> \n> \n> <details>\n> <summary>📝 Suggested docstring fix</summary>\n> \n> ```diff\n> -        \"\"\"Test that properties are cached using lru_cache\"\"\"\n> +        \"\"\"Test that properties are cached per-instance\"\"\"\n> ```\n> </details>\n> \n> <details>\n> <summary>🤖 Prompt for AI Agents</summary>\n> \n> ```\n> Verify each finding against current code. Fix only still-valid issues, skip the\n> rest with a brief reason, keep changes minimal, and validate.\n> \n> In\n> `@packages/nvidia_nat_core/tests/nat/observability/mixin/test_type_introspection_mixin.py`\n> around lines 236 - 237, The docstring in test_properties_cached is outdated\n> because it still mentions lru_cache even though the test now covers the\n> per-instance cache behavior. Update the docstring in test_properties_cached to\n> describe the current caching mechanism accurately and remove any reference to\n> lru_cache so it matches the implementation and avoids confusion.\n> ```\n> \n> </details>\n> \n> <!-- cr-comment:v1:a84610d5e1fa3b66461ecf15 -->\n> \n> </blockquote></details>\n> \n> </blockquote></details>\n\n<details>\n<summary>🧹 Nitpick comments (2)</summary><blockquote>\n\n<details>\n<summary>packages/nvidia_nat_core/src/nat/observability/mixin/type_introspection_mixin.py (2)</summary><blockquote>\n\n`289-306`: _📐 Maintainability & Code Quality_ | _🔵 Trivial_ | _⚡ Quick win_\n\n**Duplicated lazy-cache boilerplate across four methods.**\n\nThe `if not hasattr(self, \"_X_cache\"): ... ; return self._X_cache` pattern is repeated near-identically four times. Extracting a small shared helper would reduce duplication and the chance that a future edit diverges from the others.\n\n\n\n<details>\n<summary>♻️ Example helper to reduce duplication</summary>\n\n```diff\n+    def _instance_cache(self, cache_attr: str, factory: Callable[[], Any]) -> Any:\n+        if not hasattr(self, cache_attr):\n+            setattr(self, cache_attr, factory())\n+        return getattr(self, cache_attr)\n+\n     def _extract_input_output_types(self) -> tuple[type[Any], type[Any]]:\n-        if not hasattr(self, \"_extract_input_output_types_cache\"):\n-            # First try the signature-based approach\n-            result = self._extract_types_from_signature_method()\n-            if result:\n-                self._extract_input_output_types_cache = result\n-                return self._extract_input_output_types_cache\n-\n-            # Fallback to MRO-based approach for complex inheritance\n-            result = self._extract_instance_types_from_mro()\n-            if result:\n-                self._extract_input_output_types_cache = result\n-                return self._extract_input_output_types_cache\n-\n-            raise ValueError(...)\n-\n-        return self._extract_input_output_types_cache\n+        def _compute() -> tuple[type[Any], type[Any]]:\n+            result = self._extract_types_from_signature_method() or self._extract_instance_types_from_mro()\n+            if result is None:\n+                raise ValueError(...)\n+            return result\n+        return self._instance_cache(\"_extract_input_output_types_cache\", _compute)\n```\n</details>\n\n\nAlso applies to: 335-342, 441-455, 503-513\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against current code. Fix only still-valid issues, skip the\nrest with a brief reason, keep changes minimal, and validate.\n\nIn\n`@packages/nvidia_nat_core/src/nat/observability/mixin/type_introspection_mixin.py`\naround lines 289 - 306, The lazy-cache pattern is duplicated across multiple\nmethods in TypeIntrospectionMixin, so extract a shared helper to centralize the\n“check cache, compute via fallback, store, return” flow. Refactor the repeated\nlogic in _extract_input_output_types and the other matching methods referenced\nby the review into one reusable helper, then have each method delegate to it\nwhile preserving the existing signature/MRO fallback behavior and the same cache\nattribute names.\n```\n\n</details>\n\n<!-- cr-comment:v1:0a920ead247433e9d4c48749 -->\n\n---\n\n`289-306`: _🩺 Stability & Availability_ | _🔵 Trivial_ | _💤 Low value_\n\n**Extract the repeated cache boilerplate.** The four cache methods repeat the same `hasattr`/init/return pattern; a small shared helper would reduce duplication and future drift.\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against current code. Fix only still-valid issues, skip the\nrest with a brief reason, keep changes minimal, and validate.\n\nIn\n`@packages/nvidia_nat_core/src/nat/observability/mixin/type_introspection_mixin.py`\naround lines 289 - 306, The cache access logic in the type introspection mixin\nrepeats the same hasattr/init/return pattern across multiple methods, so extract\nthat boilerplate into a shared helper and have the cache methods reuse it.\nUpdate the relevant methods in TypeIntrospectionMixin, including\n_extract_input_output_types, to centralize the cache check and assignment while\nkeeping the signature-based and MRO-based lookup behavior unchanged.\n```\n\n</details>\n\n<!-- cr-comment:v1:47c90884fe14952f5e3200ae -->\n\n</blockquote></details>\n\n</blockquote></details>\n\n<details>\n<summary>🤖 Prompt for all review comments with AI agents</summary>\n\n```\nVerify each finding against current code. Fix only still-valid issues, skip the\nrest with a brief reason, keep changes minimal, and validate.\n\nInline comments:\nIn `@packages/nvidia_nat_core/src/nat/builder/function_base.py`:\n- Around line 95-96: The `input_type` accessor on `FunctionBase` now uses\n`cached_property`, which changes the public contract by making it\nwritable/deletable and potentially recomputable under contention. Update\n`FunctionBase.input_type` to preserve read-only behavior by using `property`\nwith explicit caching elsewhere, or add documentation and tests if the new\nmutability is intentional; make sure any related accessors in `FunctionBase`\nfollow the same contract.\n\nIn\n`@packages/nvidia_nat_core/tests/nat/observability/mixin/test_type_introspection_mixin.py`:\n- Around line 258-263: The comment in test_type_introspection_mixin around\ninstance.input_type is stale because the cache-clearing call was removed. Update\nor remove the “Clear cache to force re-evaluation” comment so it matches the\ncurrent behavior in the test that patches __orig_bases__ and expects ValueError\nfrom input_type.\n\n---\n\nOutside diff comments:\nIn\n`@packages/nvidia_nat_core/tests/nat/observability/mixin/test_type_introspection_mixin.py`:\n- Around line 236-237: The docstring in test_properties_cached is outdated\nbecause it still mentions lru_cache even though the test now covers the\nper-instance cache behavior. Update the docstring in test_properties_cached to\ndescribe the current caching mechanism accurately and remove any reference to\nlru_cache so it matches the implementation and avoids confusion.\n\n---\n\nNitpick comments:\nIn\n`@packages/nvidia_nat_core/src/nat/observability/mixin/type_introspection_mixin.py`:\n- Around line 289-306: The lazy-cache pattern is duplicated across multiple\nmethods in TypeIntrospectionMixin, so extract a shared helper to centralize the\n“check cache, compute via fallback, store, return” flow. Refactor the repeated\nlogic in _extract_input_output_types and the other matching methods referenced\nby the review into one reusable helper, then have each method delegate to it\nwhile preserving the existing signature/MRO fallback behavior and the same cache\nattribute names.\n- Around line 289-306: The cache access logic in the type introspection mixin\nrepeats the same hasattr/init/return pattern across multiple methods, so extract\nthat boilerplate into a shared helper and have the cache methods reuse it.\nUpdate the relevant methods in TypeIntrospectionMixin, including\n_extract_input_output_types, to centralize the cache check and assignment while\nkeeping the signature-based and MRO-based lookup behavior unchanged.\n```\n\n</details>\n\n<details>\n<summary>🪄 Autofix (Beta)</summary>\n\nFix all unresolved CodeRabbit comments on this PR:\n\n- [ ] <!-- {\"checkboxId\": \"4b0d0e0a-96d7-4f10-b296-3a18ea78f0b9\"} --> Push a commit to this branch (recommended)\n- [ ] <!-- {\"checkboxId\": \"ff5b1114-7d8c-49e6-8ac1-43f82af23a33\"} --> Create a new PR with the fixes\n\n</details>\n\n---\n\n<details>\n<summary>ℹ️ Review info</summary>\n\n<details>\n<summary>⚙️ Run configuration</summary>\n\n**Configuration used**: Path: .coderabbit.yaml\n\n**Review profile**: CHILL\n\n**Plan**: Enterprise\n\n**Run ID**: `351c1772-5b8c-4d82-8199-e0e8912cfea3`\n\n</details>\n\n<details>\n<summary>📥 Commits</summary>\n\nReviewing files that changed from the base of the PR and between 9a2830413c7682f0d2989aae788ebce56ae5ad34 and cddb4adbeb86298db8d8c6858597f539e44b9218.\n\n</details>\n\n<details>\n<summary>📒 Files selected for processing (4)</summary>\n\n* `packages/nvidia_nat_core/src/nat/builder/function_base.py`\n* `packages/nvidia_nat_core/src/nat/observability/mixin/type_introspection_mixin.py`\n* `packages/nvidia_nat_core/src/nat/utils/type_utils.py`\n* `packages/nvidia_nat_core/tests/nat/observability/mixin/test_type_introspection_mixin.py`\n\n</details>\n\n</details>\n\n<!-- This is an auto-generated comment by CodeRabbit for review status -->",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#pullrequestreview-4654807413",
+    "pull_request_url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105",
+    "author_association": "NONE",
+    "_links": {
+      "html": {
+        "href": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#pullrequestreview-4654807413"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105"
+      }
+    },
+    "submitted_at": "2026-07-08T13:55:51Z",
+    "commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218"
+  },
+  {
+    "id": 4654816791,
+    "node_id": "PRR_kwDOOETmj88AAAABFXLeFw",
+    "user": {
+      "login": "willkill07",
+      "id": 2007799,
+      "node_id": "MDQ6VXNlcjIwMDc3OTk=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2007799?u=54e2e6d353466840b3a8036e40b3646e9eebac63&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/willkill07",
+      "html_url": "https://github.com/willkill07",
+      "followers_url": "https://api.github.com/users/willkill07/followers",
+      "following_url": "https://api.github.com/users/willkill07/following{/other_user}",
+      "gists_url": "https://api.github.com/users/willkill07/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/willkill07/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/willkill07/subscriptions",
+      "organizations_url": "https://api.github.com/users/willkill07/orgs",
+      "repos_url": "https://api.github.com/users/willkill07/repos",
+      "events_url": "https://api.github.com/users/willkill07/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/willkill07/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Formatting will definitely fail. I triggered CI, too.",
+    "state": "CHANGES_REQUESTED",
+    "html_url": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#pullrequestreview-4654816791",
+    "pull_request_url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#pullrequestreview-4654816791"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105"
+      }
+    },
+    "submitted_at": "2026-07-08T13:57:37Z",
+    "commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218"
+  }
+]

@@ -1,0 +1,209 @@
+[
+  {
+    "url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544541123",
+    "pull_request_review_id": 4654807413,
+    "id": 3544541123,
+    "node_id": "PRRC_kwDOOETmj87TRWfD",
+    "diff_hunk": "@@ -92,8 +92,7 @@ def __init__(self,\n \n         self._converter: TypeConverter = TypeConverter(converters)\n \n-    @property\n-    @lru_cache\n+    @cached_property\n     def input_type(self) -> type[InputT]:",
+    "path": "packages/nvidia_nat_core/src/nat/builder/function_base.py",
+    "commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218",
+    "original_commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "_🎯 Functional Correctness_ | _🟡 Minor_ | _⚡ Quick win_\n\n<details>\n<summary>🧩 Analysis chain</summary>\n\n🌐 Web query:\n\n`Does functools.cached_property allow direct instance attribute assignment to override the cached value, unlike property?`\n\n💡 Result:\n\nYes, functools.cached_property allows direct instance attribute assignment to override the cached value, which is a key difference from the built-in property decorator [1][2]. Unlike property, which is a data descriptor that typically blocks attribute writes unless a setter is explicitly defined, cached_property is a non-data descriptor [3][1][2]. When accessed, a cached_property computes its value once and writes it directly to the instance's dict under the same name as the property [1][2]. Because the value is stored as a normal instance attribute, subsequent reads or writes to that attribute bypass the cached_property method entirely, effectively allowing you to manually override the cached value or set it directly [1][4][2]. Additionally, you can clear the cached value by deleting the attribute using del, which will cause the cached_property to recompute the value upon the next access [1][4][2].\n\nCitations:\n\n- 1: https://docs.python.org/3.11/library/functools.html\n- 2: https://github.com/python/cpython/blob/master/Doc/library/functools.rst\n- 3: https://github.com/python/cpython/issues/86947\n- 4: https://github.com/python/cpython/issues/82734\n\n---\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nset -euo pipefail\n\n# Inspect the file and nearby cached_property methods.\nsed -n '1,360p' packages/nvidia_nat_core/src/nat/builder/function_base.py\n\necho\necho \"---- usages of these properties ----\"\nrg -n \"\\.(input_type|input_schema|output_type|output_schema|schema|type)\\b\" packages/nvidia_nat_core/src/nat -g '!**/__pycache__/**'\n\necho\necho \"---- cached_property in this file ----\"\nrg -n \"cached_property\" packages/nvidia_nat_core/src/nat/builder/function_base.py\n```\n\nRepository: NVIDIA/NeMo-Agent-Toolkit\n\nLength of output: 25216\n\n---\n\n\n\n</details>\n\n**`cached_property` changes the public API contract** These accessors are now writable/deletable instance attributes and can run more than once under contention. If they are meant to stay read-only, keep `property` + `lru_cache` or document the new mutability.\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against current code. Fix only still-valid issues, skip the\nrest with a brief reason, keep changes minimal, and validate.\n\nIn `@packages/nvidia_nat_core/src/nat/builder/function_base.py` around lines 95 -\n96, The `input_type` accessor on `FunctionBase` now uses `cached_property`,\nwhich changes the public contract by making it writable/deletable and\npotentially recomputable under contention. Update `FunctionBase.input_type` to\npreserve read-only behavior by using `property` with explicit caching elsewhere,\nor add documentation and tests if the new mutability is intentional; make sure\nany related accessors in `FunctionBase` follow the same contract.\n```\n\n</details>\n\n<!-- fingerprinting:phantom:poseidon:beignet -->\n\n<!-- cr-indicator-types:potential_issue -->\n\n<!-- cr-comment:v1:018c08547990b6f589b8e531 -->\n\n_Source: Path instructions_\n\n<!-- This is an auto-generated comment by CodeRabbit -->",
+    "created_at": "2026-07-08T13:55:50Z",
+    "updated_at": "2026-07-08T13:55:51Z",
+    "html_url": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#discussion_r3544541123",
+    "pull_request_url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544541123"
+      },
+      "html": {
+        "href": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#discussion_r3544541123"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544541123/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 95,
+    "original_start_line": 95,
+    "start_side": "RIGHT",
+    "line": 96,
+    "original_line": 96,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 16,
+    "position": 16,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544541131",
+    "pull_request_review_id": 4654807413,
+    "id": 3544541131,
+    "node_id": "PRRC_kwDOOETmj87TRWfL",
+    "diff_hunk": "@@ -258,7 +258,7 @@ def test_no_orig_bases_error(self):\n         # Mock to remove __orig_bases__\n         with patch.object(instance.__class__, '__orig_bases__', []):\n             # Clear cache to force re-evaluation\n-            instance._extract_input_output_types.cache_clear()\n+\n             with pytest.raises(ValueError):\n                 _ = instance.input_type",
+    "path": "packages/nvidia_nat_core/tests/nat/observability/mixin/test_type_introspection_mixin.py",
+    "commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218",
+    "original_commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "_📐 Maintainability & Code Quality_ | _🟡 Minor_ | _⚡ Quick win_\n\n**Stale comment left after removing `.cache_clear()`.**\n\nThe comment \"Clear cache to force re-evaluation\" no longer matches the code — the cache-clearing call was removed. Remove or update the comment to avoid misleading future readers.\n\n\n\n<details>\n<summary>📝 Suggested cleanup</summary>\n\n```diff\n         with patch.object(instance.__class__, '__orig_bases__', []):\n-            # Clear cache to force re-evaluation\n\n             with pytest.raises(ValueError):\n                 _ = instance.input_type\n```\n</details>\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n        # Mock to remove __orig_bases__\n        with patch.object(instance.__class__, '__orig_bases__', []):\n\n            with pytest.raises(ValueError):\n                _ = instance.input_type\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against current code. Fix only still-valid issues, skip the\nrest with a brief reason, keep changes minimal, and validate.\n\nIn\n`@packages/nvidia_nat_core/tests/nat/observability/mixin/test_type_introspection_mixin.py`\naround lines 258 - 263, The comment in test_type_introspection_mixin around\ninstance.input_type is stale because the cache-clearing call was removed. Update\nor remove the “Clear cache to force re-evaluation” comment so it matches the\ncurrent behavior in the test that patches __orig_bases__ and expects ValueError\nfrom input_type.\n```\n\n</details>\n\n<!-- fingerprinting:phantom:poseidon:beignet -->\n\n<!-- cr-indicator-types:potential_issue -->\n\n<!-- cr-comment:v1:0ee990334d60dbbc4292914e -->\n\n<!-- This is an auto-generated comment by CodeRabbit -->",
+    "created_at": "2026-07-08T13:55:50Z",
+    "updated_at": "2026-07-08T13:55:51Z",
+    "html_url": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#discussion_r3544541131",
+    "pull_request_url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544541131"
+      },
+      "html": {
+        "href": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#discussion_r3544541131"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544541131/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 258,
+    "original_start_line": 258,
+    "start_side": "RIGHT",
+    "line": 263,
+    "original_line": 263,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 7,
+    "position": 7,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544549377",
+    "pull_request_review_id": 4654816791,
+    "id": 3544549377,
+    "node_id": "PRRC_kwDOOETmj87TRYgB",
+    "diff_hunk": "@@ -23,7 +23,7 @@\n import typing\n from abc import ABC\n from collections.abc import Callable\n-from functools import lru_cache\n+from functools import cached_property, lru_cache",
+    "path": "packages/nvidia_nat_core/src/nat/builder/function_base.py",
+    "commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218",
+    "original_commit_id": "cddb4adbeb86298db8d8c6858597f539e44b9218",
+    "user": {
+      "login": "willkill07",
+      "id": 2007799,
+      "node_id": "MDQ6VXNlcjIwMDc3OTk=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2007799?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/willkill07",
+      "html_url": "https://github.com/willkill07",
+      "followers_url": "https://api.github.com/users/willkill07/followers",
+      "following_url": "https://api.github.com/users/willkill07/following{/other_user}",
+      "gists_url": "https://api.github.com/users/willkill07/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/willkill07/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/willkill07/subscriptions",
+      "organizations_url": "https://api.github.com/users/willkill07/orgs",
+      "repos_url": "https://api.github.com/users/willkill07/repos",
+      "events_url": "https://api.github.com/users/willkill07/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/willkill07/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "```suggestion\nfrom functools import cached_property\nfrom functools import lru_cache\n```",
+    "created_at": "2026-07-08T13:56:57Z",
+    "updated_at": "2026-07-08T13:57:37Z",
+    "html_url": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#discussion_r3544549377",
+    "pull_request_url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544549377"
+      },
+      "html": {
+        "href": "https://github.com/NVIDIA/NeMo-Agent-Toolkit/pull/2105#discussion_r3544549377"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/2105"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/NVIDIA/NeMo-Agent-Toolkit/pulls/comments/3544549377/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 26,
+    "original_line": 26,
+    "side": "RIGHT",
+    "author_association": "MEMBER",
+    "original_position": 5,
+    "position": 5,
+    "subject_type": "line"
+  }
+]

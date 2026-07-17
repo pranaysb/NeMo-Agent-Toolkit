@@ -15,7 +15,9 @@
 
 import asyncio
 import logging
+from collections.abc import Coroutine
 from typing import TYPE_CHECKING
+from typing import Any
 
 from nat.builder.context import Context
 from nat.data_models.api_server import ResponseATIFStep
@@ -28,6 +30,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_background_tasks: set[asyncio.Task[Any]] = set()
+
+
+def _fire_and_forget(coro: Coroutine[Any, Any, Any]) -> None:
+    """Run a coroutine as a background task, keeping a strong reference to prevent GC."""
+    loop = asyncio.get_running_loop()
+    task = loop.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+
 
 async def pull_intermediate(_q, adapter):
     """
@@ -37,7 +49,6 @@ async def pull_intermediate(_q, adapter):
     """
     intermediate_done = asyncio.Event()
     context = Context.get()
-    loop = asyncio.get_running_loop()
     trace_id_emitted = False
 
     async def set_intermediate_done():
@@ -57,7 +68,7 @@ async def pull_intermediate(_q, adapter):
             observability_trace_id = context.observability_trace_id
             if observability_trace_id:
                 from nat.data_models.api_server import ResponseObservabilityTrace
-                loop.create_task(_q.put(ResponseObservabilityTrace(observability_trace_id=observability_trace_id)))
+                _fire_and_forget(_q.put(ResponseObservabilityTrace(observability_trace_id=observability_trace_id)))
                 trace_id_emitted = True
 
         if adapter is None:
@@ -70,7 +81,7 @@ async def pull_intermediate(_q, adapter):
             adapted = adapter.process(item)
 
         if adapted is not None:
-            loop.create_task(_q.put(adapted))
+            _fire_and_forget(_q.put(adapted))
 
     def on_error_cb(exc: Exception):
         """
@@ -78,7 +89,7 @@ async def pull_intermediate(_q, adapter):
         """
         logger.error("Hit on_error: %s", exc)
 
-        loop.create_task(set_intermediate_done())
+        _fire_and_forget(set_intermediate_done())
 
     def on_complete_cb():
         """
@@ -86,7 +97,7 @@ async def pull_intermediate(_q, adapter):
         """
         logger.debug("Completed reading intermediate steps")
 
-        loop.create_task(set_intermediate_done())
+        _fire_and_forget(set_intermediate_done())
 
     # Subscribe to the runner's "reactive_event_stream" (now a simple Observable)
     _ = context.intermediate_step_manager.subscribe(on_next=on_next_cb,
@@ -106,7 +117,6 @@ async def pull_intermediate_atif(_q, converter: "ATIFStreamConverter"):
     """
     intermediate_done = asyncio.Event()
     context = Context.get()
-    loop = asyncio.get_running_loop()
     trace_id_emitted = False
 
     async def set_intermediate_done():
@@ -126,7 +136,7 @@ async def pull_intermediate_atif(_q, converter: "ATIFStreamConverter"):
             metrics=atif_step.metrics.model_dump(exclude_none=True) if atif_step.metrics else None,
             extra=atif_step.extra,
         )
-        loop.create_task(_q.put(resp))
+        _fire_and_forget(_q.put(resp))
 
     def on_next_cb(item: IntermediateStep):
         nonlocal trace_id_emitted
@@ -135,7 +145,7 @@ async def pull_intermediate_atif(_q, converter: "ATIFStreamConverter"):
             observability_trace_id = context.observability_trace_id
             if observability_trace_id:
                 from nat.data_models.api_server import ResponseObservabilityTrace
-                loop.create_task(_q.put(ResponseObservabilityTrace(observability_trace_id=observability_trace_id)))
+                _fire_and_forget(_q.put(ResponseObservabilityTrace(observability_trace_id=observability_trace_id)))
                 trace_id_emitted = True
 
         atif_step = converter.push(item)
@@ -144,7 +154,7 @@ async def pull_intermediate_atif(_q, converter: "ATIFStreamConverter"):
 
     def on_error_cb(exc: Exception):
         logger.error("ATIF stream hit on_error: %s", exc)
-        loop.create_task(set_intermediate_done())
+        _fire_and_forget(set_intermediate_done())
 
     def on_complete_cb():
         logger.debug("ATIF stream complete, flushing pending turn")
@@ -158,8 +168,8 @@ async def pull_intermediate_atif(_q, converter: "ATIFStreamConverter"):
             agent=trajectory.agent.model_dump(exclude_none=True),
             final_metrics=trajectory.final_metrics.model_dump(exclude_none=True) if trajectory.final_metrics else None,
         )
-        loop.create_task(_q.put(summary))
-        loop.create_task(set_intermediate_done())
+        _fire_and_forget(_q.put(summary))
+        _fire_and_forget(set_intermediate_done())
 
     _ = context.intermediate_step_manager.subscribe(on_next=on_next_cb,
                                                     on_error=on_error_cb,
