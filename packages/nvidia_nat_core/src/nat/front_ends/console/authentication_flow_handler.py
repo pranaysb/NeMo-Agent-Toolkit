@@ -19,7 +19,6 @@ import secrets
 import webbrowser
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any
 
 import click
 import httpx
@@ -66,7 +65,6 @@ class ConsoleAuthenticationFlowHandler(FlowHandlerBase):
     def __init__(self) -> None:
         super().__init__()
         self._server_controller: _FastApiFrontEndController | None = None
-        self._server_task: asyncio.Task[Any] | None = None
         self._redirect_app: FastAPI | None = None  # ★ NEW
         self._flows: dict[str, _FlowState] = {}
         self._active_flows = 0
@@ -265,7 +263,7 @@ class ConsoleAuthenticationFlowHandler(FlowHandlerBase):
 
             self._server_controller = _FastApiFrontEndController(self._redirect_app)
 
-            self._server_task = asyncio.create_task(self._server_controller.start_server(host="localhost", port=8000))
+            await self._server_controller.start_server(host="localhost", port=8000)
 
             # Give the server a moment to bind sockets before we return
             await asyncio.sleep(0.3)

@@ -33,12 +33,18 @@ logger = logging.getLogger(__name__)
 _background_tasks: set[asyncio.Task[Any]] = set()
 
 
+def _task_done_cb(task: asyncio.Task[Any]) -> None:
+    _background_tasks.discard(task)
+    if not task.cancelled() and task.exception():
+        logger.error("Background task failed: %s", task.exception())
+
+
 def _fire_and_forget(coro: Coroutine[Any, Any, Any]) -> None:
     """Run a coroutine as a background task, keeping a strong reference to prevent GC."""
     loop = asyncio.get_running_loop()
     task = loop.create_task(coro)
     _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
+    task.add_done_callback(_task_done_cb)
 
 
 async def pull_intermediate(_q, adapter):
